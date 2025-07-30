@@ -1,6 +1,6 @@
 // sign in / sign up page
 
-const express = require('express');
+import express from "express";
 const router = express.Router();
 
 router.get('/login', (req, res) => {
@@ -23,4 +23,4 @@ router.post('/register', (req, res) => {
     res.send('Just a second, registering...');
 });
 
-module.exports = router;
+export default router;
