@@ -4,11 +4,11 @@ import express from "express";
 const router = express.Router();
 
 router.get('/login', (req, res) => {
-    res.render('auth', {FormType: 'login'});
+    res.render('auth', {FormType: 'login', layout: false});
 });
 
 router.get('/register', (req, res) => {
-    res.render('auth', {FormType: 'register'});
+    res.render('auth', {FormType: 'register', layout: false});
 });
 
 router.post('/login', (req, res) => {
