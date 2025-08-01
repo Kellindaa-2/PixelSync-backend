@@ -7,25 +7,35 @@ import authRoutes from "./routes/auth.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
 const app = express();
 const port = 3000;
 
+// Middleware to parse form data and JSON
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use(express.static(path.join(__dirname, '../PixelSync-frontend/public')));
+// Serve static files from frontend's public folder
+app.use(express.static(path.join(__dirname, "../PixelSync-frontend/public")));
 
-app.set('views', path.join(__dirname, '../PixelSync-frontend/views'));
-app.set('view engine', 'ejs');
+// Set the views folder and view engine to use EJS templates from frontend
+app.set("views", path.join(__dirname, "../PixelSync-frontend/views"));
+app.set("view engine", "ejs");
 
 // Use auth routes
-app.use('/auth', authRoutes);
+app.use("/auth", authRoutes);
 
-// Default route - redirect to login
-app.get('/', (req, res) => {
-    res.redirect('/auth/login');
+// Redirect root to login page (example)
+app.get("/", (req, res) => {
+  res.redirect("/auth/login");
 });
 
+// Route to serve the whiteboard page
+app.get("/whiteboard", (req, res) => {
+  res.render("whiteboard"); // Make sure whiteboard.ejs exists in views folder
+});
+
+// Start the server
 app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running at http://localhost:${port}`);
 });
