@@ -5,6 +5,7 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import searchRoutes from "./routes/search.js";
 import expressLayouts from 'express-ejs-layouts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +29,7 @@ app.use('/auth', authRoutes);
 
 // Dashboard routes
 app.use('/dashboard', dashboardRoutes);
+app.use('/search', searchRoutes);
 
 // Default route - redirect to login
 app.get('/', (req, res) => {
