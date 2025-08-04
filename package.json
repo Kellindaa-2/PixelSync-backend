@@ -1,0 +1,29 @@
+{
+  "name": "pixelsync-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CUNY2XTECH-CITYTECH/PixelSync-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CUNY2XTECH-CITYTECH/PixelSync-backend/issues"
+  },
+  "homepage": "https://github.com/CUNY2XTECH-CITYTECH/PixelSync-backend#readme",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-ejs-layouts": "^2.5.1",
+    "path": "^0.12.7"
+  }
+}
