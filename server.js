@@ -41,7 +41,19 @@ app.get("/", (req, res) => {
 
 // Route to serve the whiteboard page
 app.get("/whiteboard", (req, res) => {
-  res.render("whiteboard", { layout: false }); // Make sure whiteboard.ejs exists in views folder
+  // Get board data from query parameters
+  const boardData = {
+    name: req.query.name || 'Untitled Board',
+    classCode: req.query.class || '',
+    tags: req.query.tags || ''
+  };
+  
+  console.log('Loading whiteboard with data:', boardData);
+  
+  res.render("whiteboard", { 
+    layout: false,
+    boardData: boardData
+  });
 });
 
 // Start the server
