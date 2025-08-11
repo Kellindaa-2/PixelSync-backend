@@ -7,7 +7,6 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import searchRoutes from "./routes/search.js";
-// import firebaseConfig from "./firebase/firebaseConfig.json";
 import expressLayouts from 'express-ejs-layouts';
 import { createRequire } from "module";
 
@@ -27,22 +26,22 @@ app.use(cookieParser());
 // Serve static files from frontend's public folder
 app.use(express.static(path.join(__dirname, "../PixelSync-frontend/public")));
 
-app.set('views', path.join(__dirname, '../PixelSync-frontend/views'));
-app.set('view engine', 'ejs');
+app.set("views", path.join(__dirname, "../PixelSync-frontend/views"));
+app.set("view engine", "ejs");
 
 app.get('/firebaseConfig', (req, res) => {
   res.json(firebaseConfig);
 });
 
 app.use(expressLayouts);
-app.set('layout', 'layout');
+app.set("layout", "layout");
 
 // Use auth routes
-app.use('/auth', authRoutes);
+app.use("/auth", authRoutes);
 
 // Dashboard routes
-app.use('/dashboard', dashboardRoutes);
-app.use('/search', searchRoutes);
+app.use("/dashboard", dashboardRoutes);
+app.use("/search", searchRoutes);
 
 // Redirect root to login page (example)
 app.get("/", (req, res) => {
@@ -51,7 +50,19 @@ app.get("/", (req, res) => {
 
 // Route to serve the whiteboard page
 app.get("/whiteboard", (req, res) => {
-  res.render("whiteboard"); // Make sure whiteboard.ejs exists in views folder
+  // Get board data from query parameters
+  const boardData = {
+    name: req.query.name || 'Untitled Board',
+    classCode: req.query.class || '',
+    tags: req.query.tags || ''
+  };
+  
+  console.log('Loading whiteboard with data:', boardData);
+  
+  res.render("whiteboard", { 
+    layout: false,
+    boardData: boardData
+  });
 });
 
 // Start the server
