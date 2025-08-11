@@ -1,4 +1,5 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import path from "path";
 import { dirname } from "path";
@@ -6,7 +7,12 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import searchRoutes from "./routes/search.js";
+// import firebaseConfig from "./firebase/firebaseConfig.json";
 import expressLayouts from 'express-ejs-layouts';
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const firebaseConfig = require("./firebase/firebaseConfig.json");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -17,12 +23,16 @@ const port = 3000;
 // Middleware to parse form data and JSON
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
-
+app.use(cookieParser());
 // Serve static files from frontend's public folder
 app.use(express.static(path.join(__dirname, "../PixelSync-frontend/public")));
 
 app.set('views', path.join(__dirname, '../PixelSync-frontend/views'));
 app.set('view engine', 'ejs');
+
+app.get('/firebaseConfig', (req, res) => {
+  res.json(firebaseConfig);
+});
 
 app.use(expressLayouts);
 app.set('layout', 'layout');
