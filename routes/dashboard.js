@@ -45,32 +45,53 @@ router.get('/', async (req, res) => {
   }
 });
 
+// // Handle board creation
+// router.post('/create-board', (req, res) => {
+//   const { boardName, classCode, tags } = req.body;
+  
+//   console.log('Creating new board:', {
+//     name: boardName,
+//     class: classCode,
+//     tags: tags,
+//     createdBy: req.user.uid
+//   });
+  
+//   // Here you would typically:
+//   // 1. Validate the input data
+//   // 2. Generate a unique board ID
+//   // 3. Save to database with user info
+//   // 4. Redirect to the whiteboard with the new board ID
+  
+//   // For now, let's just redirect to whiteboard
+//   // You can pass data via query parameters temporarily
+//   const queryParams = new URLSearchParams({
+//     name: boardName,
+//     class: classCode,
+//     tags: tags
+//   });
+  
+//   res.redirect(`/whiteboard?${queryParams}`);
+// });
+
 // Handle board creation
-router.post('/create-board', (req, res) => {
+router.post('/create-board', async (req, res) => {
   const { boardName, classCode, tags } = req.body;
-  
-  console.log('Creating new board:', {
-    name: boardName,
-    class: classCode,
-    tags: tags,
-    createdBy: req.user.uid
-  });
-  
-  // Here you would typically:
-  // 1. Validate the input data
-  // 2. Generate a unique board ID
-  // 3. Save to database with user info
-  // 4. Redirect to the whiteboard with the new board ID
-  
-  // For now, let's just redirect to whiteboard
-  // You can pass data via query parameters temporarily
-  const queryParams = new URLSearchParams({
-    name: boardName,
-    class: classCode,
-    tags: tags
-  });
-  
-  res.redirect(`/whiteboard?${queryParams}`);
+
+  try {
+    // Actually create the board in Firestore!
+    await BoardService.createBoard(req.user.uid, { boardName, classCode, tags });
+
+    // Redirect to whiteboard as before
+    const queryParams = new URLSearchParams({
+      name: boardName,
+      class: classCode,
+      tags: tags
+    });
+    res.redirect(`/whiteboard?${queryParams}`);
+  } catch (err) {
+    console.error('Error creating board:', err);
+    res.redirect('/dashboard');
+  }
 });
 
 // Save board image (from whiteboard)
