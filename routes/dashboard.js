@@ -1,5 +1,6 @@
 import express from 'express';
 import { admin, db } from '../firebase/firebaseAdmin.js';
+import { BoardService } from '../services/boardService.js';
 
 const router = express.Router();
 
@@ -34,8 +35,14 @@ const authenticateUser = async (req, res, next) => {
 // Apply authentication middleware to all dashboard routes
 router.use(authenticateUser);
 
-router.get('/', (req, res) => {
-  res.render('dashboard', { user: req.user });
+router.get('/', async (req, res) => {
+  try {
+    const boards = await BoardService.getUserBoards(req.user.uid);
+    res.render('dashboard', { user: req.user, boards });
+  } catch (err) {
+    console.error('Error fetching boards:', err);
+    res.render('dashboard', { user: req.user, boards: [] });
+  }
 });
 
 // Handle board creation
@@ -64,6 +71,32 @@ router.post('/create-board', (req, res) => {
   });
   
   res.redirect(`/whiteboard?${queryParams}`);
+});
+
+// Save board image (from whiteboard)
+router.post('/save-board', async (req, res) => {
+  const { name, image } = req.body;
+  try {
+    // Find the board for this user and name
+    const boardsRef = db.collection('boards');
+    const snapshot = await boardsRef
+      .where('userId', '==', req.user.uid)
+      .where('boardName', '==', name)
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) {
+      const boardDoc = snapshot.docs[0].ref;
+      await boardDoc.update({
+        image,
+        updatedAt: new Date()
+      });
+    }
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Error saving board image:', err);
+    res.status(500).json({ success: false });
+  }
 });
 
 export default router;
