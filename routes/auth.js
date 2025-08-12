@@ -171,9 +171,9 @@ router.get('/check-auth', async (req, res) => {
 });
 
 // Logout route
-router.post('/logout', (req, res) => {
-    res.clearCookie('authToken');
-    res.json({ success: true, message: 'Logged out successfully' });
+router.get('/logout', (req, res) => {
+  res.clearCookie('authToken');
+  res.redirect('/auth/login');
 });
 
 export default router;
