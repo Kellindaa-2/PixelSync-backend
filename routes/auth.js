@@ -1,7 +1,48 @@
 // sign in / sign up page
-
-import express from "express";
+import nodemailer from 'nodemailer';
+import express, { Router } from "express";
 import { admin, db } from '../firebase/firebaseAdmin.js';
+
+const allowedCunyDomains = [
+    [
+        'cuny.edu',
+        'login.cuny.edu',
+        'citymail.cuny.edu.',
+        'baruch.cuny.edu',
+        'brooklyn.cuny.edu',
+        'mail.citytech.cuny.edu',
+        'collegeofstatenisland.cuny.edu',
+        'lehman.cuny.edu',
+        'medgar.evers.cuny.edu',
+        'newschool.cuny.edu',
+        'queensborough.cuny.edu',
+        'queens.cuny.edu',
+        'hostos.cuny.edu',
+        'kingsborough.cuny.edu',
+        'la.guardian.cuny.edu',
+        'jjay.cuny.edu',
+        'guttman.cuny.edu',
+        'stu.bmcc.cuny.edu',
+        'myhunter.cuny.edu'  // updated to myhunter
+      ]
+      
+];
+
+const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+function generateVerificationCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit code
+}
+
+function isValidCunyEmail(email) {
+    return allowedCunyDomains.some(domain => email.toLowerCase().endsWith(`@${domain}`));
+}
 
 const router = express.Router();
 
@@ -76,70 +117,103 @@ router.post('/login', async (req, res) => {
         console.error('Login error:', error);
         res.status(401).json({ error: 'Invalid token or authentication failed' });
     }
+    if (!userDoc.data().verified) {
+        return res.status(403).json({ error: 'Email not verified' });
+    }
 });
 
 router.post('/register', async (req, res) => {
-    console.log('Register route hit');
-    console.log('Headers:', req.headers);
-    console.log('Body:', req.body);
-    
     const idToken = req.headers.authorization?.split('Bearer ')[1];
-    console.log('Extracted token:', idToken ? 'Token present' : 'No token');
-    
-    if (!idToken) {
-        console.log('No token provided, returning 401');
-        return res.status(401).json({ error: 'No token provided' });
-    }
-
+    if (!idToken) return res.status(401).json({ error: 'No token provided' });
+  
     try {
-        console.log('Verifying Firebase token...');
-        // Verify the Firebase ID token
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        const uid = decodedToken.uid;
-        const { name, email } = req.body;
-        
-        console.log('Token verified, UID:', uid);
-        console.log('User data:', { name, email });
-
-        // Check if user already exists in Firestore
-        const userDoc = await db.collection('users').doc(uid).get();
-        
-        if (userDoc.exists) {
-            console.log('User already exists in Firestore');
-            return res.status(400).json({ error: 'User already exists' });
-        }
-
-        console.log('Creating user in Firestore...');
-        // Add user to Firestore
-        await db.collection('users').doc(uid).set({
-            name: name,
-            email: email,
-            createdAt: new Date(),
-            lastLogin: new Date()
-        });
-
-        // Set session or cookie for authentication
-        res.cookie('authToken', idToken, { 
-            httpOnly: true, 
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        });
-
-        console.log('User registered successfully:', uid);
-        res.json({ 
-            success: true, 
-            message: 'Registration successful!',
-            user: {
-                uid: uid,
-                email: email,
-                name: name
-            }
-        });
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      const uid = decodedToken.uid;
+      const { name, email } = req.body;
+  
+      if (!email || !isValidCunyEmail(email)) {
+        return res.status(400).json({ error: 'Please provide a valid CUNY school email.' });
+      }
+  
+      // Check if user exists
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (userDoc.exists) return res.status(400).json({ error: 'User already exists' });
+  
+      // Generate verification code
+      const verificationCode = generateVerificationCode();
+  
+      // Save user with unverified status & verification code
+      await db.collection('users').doc(uid).set({
+        name,
+        email,
+        verified: false,
+        verificationCode,
+        verificationExpires: Date.now() + 10 * 60 * 1000, // expires in 10 mins
+        createdAt: new Date(),
+        lastLogin: new Date()
+      });
+  
+      // Send verification email
+      await transporter.sendMail({
+        from: `"Your App" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "Verify Your CUNY Email",
+        text: `Hello ${name},\n\nYour verification code is: ${verificationCode}\n\nThis code expires in 10 minutes.`
+      });
+  
+      res.json({ 
+        success: true,
+        message: `Verification code sent to ${email}`,
+        user: { uid, email, name }
+      });
+  
     } catch (error) {
-        console.error('Error registering user:', error);
-        res.status(500).json({ error: 'Error registering user' });
+      console.error('Error registering user:', error);
+      res.status(500).json({ error: 'Error registering user' });
     }
+  });
+  
+router.post('/verify-email', async (req, res) => {
+    const { uid, code } = req.body;
+    
+    try {
+        const userDocRef = db.collection('users').doc(uid);
+        const userDoc = await userDoc.Ref.get();
+
+        if (!userDoc.exists) {
+            return res.status(400).json({ error: 'Invalid user' });
+        }
+        const userData = userDoc.data();
+        
+        if (userData.verified) {
+            return res.status(400).json({ error: 'Email already verified' });
+        }
+        if (Date.now() > userData.verificationExpires) {
+            return res.status(400).json({ error: 'Verification code expired' });
+        }
+       
+        if (userData.verificationCode !== code) {
+            return res.status(400).json({ error: 'Invalid verification code' });
+        }
+        
+        await userDocref.update({
+            verified: true,
+            verificationCode: null, // Clear the code after verification
+            verificationExpires: null // Clear the expiration time
+        });
+
+        res.json({ success: true, message: 'Email verified successfully' });
+
+    } catch (error) {
+        console.error('Error verifying email:', error);
+        res.status(500).json({ error: 'Error verifying email' });
+    }
+
 });
+    
+
+
+
 
 // Check if user is authenticated
 router.get('/check-auth', async (req, res) => {
