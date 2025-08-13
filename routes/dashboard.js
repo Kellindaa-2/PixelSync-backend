@@ -120,4 +120,26 @@ router.post('/save-board', async (req, res) => {
   }
 });
 
+router.get('/get-board-image', async (req, res) => {
+  const { name } = req.query;
+  try {
+    const boardsRef = db.collection('boards');
+    const snapshot = await boardsRef
+      .where('userId', '==', req.user.uid)
+      .where('boardName', '==', name)
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) {
+      const board = snapshot.docs[0].data();
+      res.json({ image: board.image || null });
+    } else {
+      res.json({ image: null });
+    }
+  } catch (err) {
+    console.error('Error fetching board image:', err);
+    res.status(500).json({ image: null });
+  }
+});
+
 export default router;
