@@ -87,7 +87,13 @@ router.post('/create-board', async (req, res) => {
       class: classCode,
       tags: tags
     });
-    res.redirect(`/whiteboard?${queryParams}`);
+    const redirectUrl = `/whiteboard?${queryParams}`;
+    // If the request looks like JSON/fetch, return JSON so client can handle redirect manually
+    const contentType = req.get('Content-Type') || '';
+    if (contentType.includes('application/json') || req.xhr || req.headers.accept?.includes('application/json')) {
+      return res.json({ redirect: redirectUrl });
+    }
+    return res.redirect(redirectUrl);
   } catch (err) {
     console.error('Error creating board:', err);
     res.redirect('/dashboard');

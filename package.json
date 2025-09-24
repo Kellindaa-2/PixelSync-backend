@@ -25,7 +25,8 @@
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-ejs-layouts": "^2.5.1",
-    "firebase-admin": "^13.4.0",
+    "firebase": "^12.3.0",
+    "firebase-admin": "^13.5.0",
     "nodemailer": "^7.0.5",
     "path": "^0.12.7"
   }
